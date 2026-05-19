@@ -1,8 +1,9 @@
 import feedparser
 import requests
+import os
 
-BOT_TOKEN = "TOKENUL_TAU"
-CHAT_ID = "GROUP_CHAT_ID"
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+CHAT_ID = os.environ["CHAT_ID"]
 
 with open("feeds.txt", "r") as f:
     feeds = f.readlines()
