@@ -2,6 +2,7 @@ import feedparser
 import requests
 import os
 import sys
+import html
 from datetime import datetime
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -12,14 +13,13 @@ if not BOT_TOKEN or not CHAT_ID:
     sys.exit(1)
 
 feeds = [
+    "https://www.bleepingcomputer.com/feed/",
+    "https://krebsonsecurity.com/feed/",
+    "https://thehackernews.com/feeds/posts/default",
     "https://feeds.arstechnica.com/arstechnica/index",
     "https://thenewstack.io/feed/",
     "https://www.servethehome.com/feed/",
-    "https://www.bleepingcomputer.com/feed/",
-    "https://www.phoronix.com/rss.php",
-    "https://hnrss.org/frontpage",
-    "https://krebsonsecurity.com/feed/",
-    "https://thehackernews.com/feeds/posts/default"
+    "https://www.phoronix.com/rss.php"
 ]
 
 # =========================
@@ -34,7 +34,7 @@ MICROSOFT = [
 
 VMWARE = [
     "vmware", "esxi", "vsphere", "vcenter",
-    "horizon", "vm tools"
+    "horizon"
 ]
 
 SECURITY = [
@@ -47,7 +47,7 @@ SECURITY = [
 INFRA = [
     "docker", "kubernetes", "linux", "firewall",
     "vpn", "dns", "cloud", "aws", "backup",
-    "network", "virtualization"
+    "network", "virtualization", "proxmox"
 ]
 
 # =========================
@@ -62,56 +62,69 @@ infra_news = []
 seen = set()
 
 # =========================
-# CLASSIFICATION
+# HELPERS
 # =========================
 
 def contains_any(text, keywords):
-    text = text.lower()
     return any(k in text for k in keywords)
+
+def clean_title(title):
+    return html.escape(title.strip())
+
+def make_item(title, link):
+    return f"• <b>{title}</b>\n{link}"
 
 # =========================
 # PARSE FEEDS
 # =========================
 
 for url in feeds:
+
     print(f"📡 Parsing: {url}")
 
     try:
         feed = feedparser.parse(url)
 
         if not feed.entries:
-            print("⚠️ No entries")
+            print("⚠️ No entries found")
             continue
 
-        for entry in feed.entries[:5]:
-            title = getattr(entry, "title", "").strip()
+        for entry in feed.entries[:6]:
+
+            title = clean_title(
+                getattr(entry, "title", "")
+            )
+
             link = getattr(entry, "link", "")
 
-            if not title:
+            if not title or not link:
                 continue
 
-            if title in seen:
+            # dedup case insensitive
+            dedup_key = title.lower()
+
+            if dedup_key in seen:
                 continue
 
-            seen.add(title)
-
-            item = f"• {title}\n{link}"
+            seen.add(dedup_key)
 
             title_lower = title.lower()
 
-            # Microsoft priority
-            if contains_any(title_lower, MICROSOFT):
+            item = make_item(title, link)
+
+            # =========================
+            # PRIORITY ORDER
+            # =========================
+
+            if contains_any(title_lower, SECURITY):
+                security_news.append(item)
+
+            elif contains_any(title_lower, MICROSOFT):
                 microsoft_news.append(item)
 
-            # VMware priority
             elif contains_any(title_lower, VMWARE):
                 vmware_news.append(item)
 
-            # Security
-            elif contains_any(title_lower, SECURITY):
-                security_news.append(item)
-
-            # Infra / sysadmin
             elif contains_any(title_lower, INFRA):
                 infra_news.append(item)
 
@@ -122,10 +135,10 @@ for url in feeds:
 # LIMITS
 # =========================
 
-microsoft_news = microsoft_news[:6]
-vmware_news = vmware_news[:4]
 security_news = security_news[:5]
-infra_news = infra_news[:4]
+microsoft_news = microsoft_news[:5]
+vmware_news = vmware_news[:3]
+infra_news = infra_news[:3]
 
 # =========================
 # BUILD MESSAGE
@@ -134,9 +147,15 @@ infra_news = infra_news[:4]
 today = datetime.utcnow().strftime("%Y-%m-%d")
 
 message = ""
-message += "🛡️ <b>DAILY SYSADMIN SECURITY DIGEST</b>\n"
+message += "🛡️ <b>DAILY SYSADMIN DIGEST</b>\n"
 message += f"📅 {today}\n"
 message += "━━━━━━━━━━━━━━━━━━\n\n"
+
+# SECURITY
+if security_news:
+    message += "🚨 <b>SECURITY & CVEs</b>\n\n"
+    message += "\n\n".join(security_news)
+    message += "\n\n"
 
 # MICROSOFT
 if microsoft_news:
@@ -150,15 +169,9 @@ if vmware_news:
     message += "\n\n".join(vmware_news)
     message += "\n\n"
 
-# SECURITY
-if security_news:
-    message += "🚨 <b>SECURITY & VULNERABILITIES</b>\n\n"
-    message += "\n\n".join(security_news)
-    message += "\n\n"
-
 # INFRA
 if infra_news:
-    message += "⚙️ <b>INFRA / DEVOPS</b>\n\n"
+    message += "⚙️ <b>INFRA / CLOUD / DEVOPS</b>\n\n"
     message += "\n\n".join(infra_news)
     message += "\n\n"
 
