@@ -3,7 +3,6 @@ name: Daily SysAdmin News
 on:
   schedule:
     - cron: '0 6 * * *'
-
   workflow_dispatch:
 
 jobs:
@@ -23,4 +22,7 @@ jobs:
         run: pip install feedparser requests
 
       - name: Run bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python news.py
