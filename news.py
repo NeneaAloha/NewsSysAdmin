@@ -13,13 +13,25 @@ if not BOT_TOKEN or not CHAT_ID:
     sys.exit(1)
 
 feeds = [
+    "https://dnsc.ro/feed",
+
+    "https://api.msrc.microsoft.com/update-guide/rss",
+    "https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=CoreInfrastructureandSecurityBlog",
+    "https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=MicrosoftSentinelBlog",
+    "https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=WindowsServer",
+    "https://azure.microsoft.com/en-us/updates/feed/",
+
+    "https://blogs.vmware.com/security/feed/",
+    "https://blogs.vmware.com/vsphere/feed/",
+
+    "https://www.cisa.gov/cybersecurity-advisories/all.xml",
     "https://www.bleepingcomputer.com/feed/",
-    "https://krebsonsecurity.com/feed/",
     "https://thehackernews.com/feeds/posts/default",
-    "https://feeds.arstechnica.com/arstechnica/index",
+    "https://krebsonsecurity.com/feed/",
+    "https://isc.sans.edu/rssfeed_full.xml",
+
     "https://thenewstack.io/feed/",
-    "https://www.servethehome.com/feed/",
-    "https://www.phoronix.com/rss.php"
+    "https://www.servethehome.com/feed/"
 ]
 
 # =========================
